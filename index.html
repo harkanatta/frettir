@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Amplified · News</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,500;1,6..72,300&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --ink: #0E0F13; --page: #F0EDE6; --sage: #7A9E87; --amber: #D4873A;
+    --steel: #3A6B8A; --muted: #8A8880; --border: rgba(240,237,230,0.09);
+  }
+  body { background:var(--ink); color:var(--page); font-family:'IBM Plex Mono',monospace; font-size:13px; min-height:100vh; display:flex; flex-direction:column; }
+
+  header { display:flex; align-items:center; justify-content:space-between; padding:13px 22px; border-bottom:1px solid var(--border); position:sticky; top:0; z-index:100; background:var(--ink); gap:12px; flex-wrap:wrap; }
+  .logo { font-family:'Newsreader',serif; font-size:21px; font-weight:300; font-style:italic; color:var(--page); letter-spacing:-0.02em; flex-shrink:0; }
+  .logo span { color:var(--amber); }
+  .header-right { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+  .last-updated { font-size:10px; color:var(--muted); letter-spacing:.04em; }
+  .btn { border:none; font-family:'IBM Plex Mono',monospace; font-size:11px; font-weight:600; letter-spacing:.05em; text-transform:uppercase; cursor:pointer; padding:7px 14px; transition:opacity .2s; }
+  .btn-amber { background:var(--amber); color:var(--ink); }
+  .btn-ghost { background:rgba(240,237,230,0.07); color:var(--page); }
+  .btn:hover { opacity:.8; } .btn:disabled { opacity:.35; cursor:not-allowed; }
+
+  .app { display:flex; flex:1; min-height:0; }
+
+  /* SIDEBAR */
+  aside { width:252px; flex-shrink:0; background:#0a0b0e; border-right:1px solid var(--border); overflow-y:auto; display:flex; flex-direction:column; }
+  .sidebar-inner { flex:1; padding:16px 0; }
+  .sec-label { font-size:9px; font-weight:600; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); padding:0 16px 7px; margin-top:14px; }
+  .sec-label:first-child { margin-top:0; }
+
+  .src { display:flex; align-items:center; gap:9px; padding:8px 16px; cursor:default; border-left:2px solid transparent; transition:background .15s; }
+  .src:hover { background:rgba(240,237,230,0.04); }
+  .src.active { border-left-color:var(--amber); background:rgba(240,237,230,0.05); }
+
+  .pulse { width:9px; height:9px; border-radius:50%; flex-shrink:0; }
+  .pulse.sporadic { background:var(--amber); animation:glow 3s ease-in-out infinite; }
+  .pulse.weekly   { background:var(--sage); }
+  .pulse.daily    { background:var(--steel); }
+  .pulse.hourly   { background:#c05050; }
+  @keyframes glow { 0%,100%{box-shadow:0 0 0 0 rgba(212,135,58,.5)} 50%{box-shadow:0 0 0 5px rgba(212,135,58,0)} }
+
+  .src-info { flex:1; min-width:0; }
+  .src-name { font-size:11px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:var(--page); }
+  .src-sub { font-size:9px; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; margin-top:2px; }
+
+  .toggle { width:26px; height:14px; border-radius:7px; border:none; cursor:pointer; position:relative; flex-shrink:0; background:rgba(240,237,230,.1); transition:background .2s; }
+  .toggle.on { background:var(--sage); }
+  .toggle::after { content:''; position:absolute; top:2px; left:2px; width:10px; height:10px; border-radius:50%; background:#fff; transition:transform .2s; }
+  .toggle.on::after { transform:translateX(12px); }
+
+  .sidebar-footer { padding:10px 16px; border-top:1px solid var(--border); }
+  .add-btn { width:100%; background:transparent; border:1px dashed rgba(240,237,230,.15); color:var(--muted); font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:.06em; text-transform:uppercase; padding:8px; cursor:pointer; transition:all .15s; }
+  .add-btn:hover { border-color:var(--amber); color:var(--amber); }
+
+  /* MAIN */
+  main { flex:1; overflow-y:auto; padding:22px 24px; }
+  .feed-header { display:flex; align-items:baseline; gap:10px; margin-bottom:16px; }
+  .feed-title { font-family:'Newsreader',serif; font-size:26px; font-weight:300; font-style:italic; }
+  .feed-count { font-size:11px; color:var(--muted); }
+
+  .legend { display:flex; gap:14px; margin-bottom:20px; flex-wrap:wrap; }
+  .leg { display:flex; align-items:center; gap:6px; font-size:10px; color:var(--muted); }
+  .leg-dot { width:7px; height:7px; border-radius:50%; }
+
+  .filter-bar { display:flex; gap:7px; margin-bottom:22px; flex-wrap:wrap; }
+  .f-btn { padding:5px 11px; border:1px solid rgba(240,237,230,.1); background:transparent; color:var(--muted); font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:.06em; text-transform:uppercase; cursor:pointer; transition:all .15s; }
+  .f-btn:hover { border-color:rgba(240,237,230,.3); color:var(--page); }
+  .f-btn.active { background:var(--amber); border-color:var(--amber); color:var(--ink); }
+
+  .rss-status { font-size:10px; padding:3px 9px; border-radius:2px; text-transform:uppercase; letter-spacing:.05em; }
+  .rss-live { background:rgba(122,158,135,.2); color:var(--sage); }
+  .rss-fallback { background:rgba(212,135,58,.15); color:var(--amber); }
+  .rss-err { background:rgba(192,80,80,.15); color:#e88; }
+
+  .src-group { margin-bottom:28px; }
+  .grp-header { display:flex; align-items:center; gap:9px; margin-bottom:11px; padding-bottom:7px; border-bottom:1px solid var(--border); flex-wrap:wrap; }
+  .grp-name { font-size:11px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; }
+  .grp-badge { font-size:9px; padding:2px 7px; text-transform:uppercase; letter-spacing:.07em; }
+  .b-sporadic { background:rgba(212,135,58,.2); color:var(--amber); }
+  .b-weekly   { background:rgba(122,158,135,.2); color:var(--sage); }
+  .b-daily    { background:rgba(58,107,138,.2);  color:#6aadd5; }
+  .b-hourly   { background:rgba(192,80,80,.12);  color:#e88; }
+  .grp-link { margin-left:auto; font-size:10px; color:var(--muted); text-decoration:none; }
+  .grp-link:hover { color:var(--amber); }
+
+  .news-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(270px,1fr)); gap:10px; }
+  .card { background:rgba(240,237,230,.04); border:1px solid rgba(240,237,230,.07); padding:13px 15px; text-decoration:none; display:block; transition:border-color .15s, background .15s; }
+  .card:hover { border-color:rgba(240,237,230,.18); background:rgba(240,237,230,.07); }
+  .card.spot { border-color:rgba(212,135,58,.28); background:rgba(212,135,58,.04); }
+  .card.spot:hover { border-color:rgba(212,135,58,.5); }
+  .card-hed { font-family:'Newsreader',serif; font-size:15px; font-weight:300; line-height:1.45; color:var(--page); margin-bottom:7px; }
+  .card-desc { font-size:11px; color:rgba(240,237,230,.55); line-height:1.5; margin-bottom:8px; }
+  .card-meta { font-size:10px; color:var(--muted); }
+
+  .empty { padding:60px 0; text-align:center; color:var(--muted); font-size:12px; line-height:2; }
+  .spin { width:28px; height:28px; border:2px solid rgba(240,237,230,.1); border-top-color:var(--amber); border-radius:50%; animation:spin .8s linear infinite; margin:0 auto 14px; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  .loading { padding:70px 24px; text-align:center; color:var(--muted); }
+  .loading-txt { font-size:12px; letter-spacing:.06em; text-transform:uppercase; margin-bottom:5px; }
+  .loading-sub { font-size:10px; color:rgba(138,136,128,.55); }
+
+  /* MODAL */
+  .modal-bg { display:none; position:fixed; inset:0; background:rgba(0,0,0,.7); z-index:200; align-items:center; justify-content:center; }
+  .modal-bg.open { display:flex; }
+  .modal { background:#13151a; border:1px solid rgba(240,237,230,.12); padding:28px; width:min(480px,92vw); max-height:85vh; overflow-y:auto; }
+  .modal h2 { font-family:'Newsreader',serif; font-size:20px; font-weight:300; font-style:italic; margin-bottom:20px; }
+  .field { margin-bottom:14px; }
+  .field label { display:block; font-size:10px; letter-spacing:.07em; text-transform:uppercase; color:var(--muted); margin-bottom:5px; }
+  .field input, .field select { width:100%; background:rgba(240,237,230,.05); border:1px solid rgba(240,237,230,.12); color:var(--page); font-family:'IBM Plex Mono',monospace; font-size:12px; padding:8px 10px; outline:none; }
+  .field input:focus, .field select:focus { border-color:var(--amber); }
+  .field select option { background:#13151a; }
+  .modal-actions { display:flex; gap:9px; margin-top:20px; }
+  .src-list-manage { margin-top:20px; border-top:1px solid var(--border); padding-top:16px; }
+  .src-row { display:flex; align-items:center; gap:8px; padding:7px 0; border-bottom:1px solid var(--border); font-size:11px; }
+  .src-row-name { flex:1; }
+  .src-row-freq { font-size:9px; color:var(--muted); text-transform:uppercase; }
+  .del-btn { background:transparent; border:none; color:#e88; cursor:pointer; font-size:13px; padding:0 4px; }
+  .del-btn:hover { color:#ff6b6b; }
+
+  ::-webkit-scrollbar { width:4px; } ::-webkit-scrollbar-track { background:transparent; }
+  ::-webkit-scrollbar-thumb { background:rgba(240,237,230,.1); border-radius:2px; }
+
+  @media(max-width:680px) { aside{display:none} main{padding:14px 14px} .news-grid{grid-template-columns:1fr} }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">amplified<span>·</span></div>
+  <div class="header-right">
+    <span class="last-updated" id="lastUpdated">not yet fetched</span>
+    <button class="btn btn-ghost" onclick="openModal()">⚙ Sources</button>
+    <button class="btn btn-amber" id="refreshBtn" onclick="fetchAll()">↻ Refresh</button>
+  </div>
+</header>
+
+<div class="app">
+  <aside>
+    <div class="sidebar-inner" id="sidebarInner"></div>
+    <div class="sidebar-footer">
+      <button class="add-btn" onclick="openModal()">+ manage sources</button>
+    </div>
+  </aside>
+
+  <main>
+    <div class="feed-header">
+      <div class="feed-title">Today's feed</div>
+      <div class="feed-count" id="feedCount"></div>
+    </div>
+    <div class="legend">
+      <div class="leg"><div class="leg-dot" style="background:var(--amber)"></div>sporadic · spotlight</div>
+      <div class="leg"><div class="leg-dot" style="background:var(--sage)"></div>weekly</div>
+      <div class="leg"><div class="leg-dot" style="background:#6aadd5"></div>daily</div>
+      <div class="leg"><div class="leg-dot" style="background:#c88"></div>hourly · limited</div>
+    </div>
+    <div class="filter-bar">
+      <button class="f-btn active" onclick="setFilter('all',this)">All</button>
+      <button class="f-btn" onclick="setFilter('sporadic',this)">Sporadic</button>
+      <button class="f-btn" onclick="setFilter('weekly',this)">Weekly</button>
+      <button class="f-btn" onclick="setFilter('daily',this)">Daily</button>
+      <button class="f-btn" onclick="setFilter('hourly',this)">Hourly</button>
+      <button class="f-btn" onclick="setFilter('iceland',this)">🇮🇸 Iceland</button>
+      <button class="f-btn" onclick="setFilter('international',this)">🌍 International</button>
+    </div>
+    <div id="feedContent">
+      <div class="loading">
+        <div style="font-family:'Newsreader',serif;font-size:24px;font-style:italic;color:rgba(240,237,230,.25);margin-bottom:10px">no news yet</div>
+        <div class="loading-sub">Click ↻ Refresh to fetch from your sources</div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- MANAGE SOURCES MODAL -->
+<div class="modal-bg" id="modalBg" onclick="closeModalBg(event)">
+  <div class="modal">
+    <h2>Manage Sources</h2>
+    <div class="field">
+      <label>Name</label>
+      <input type="text" id="f-name" placeholder="e.g. Carbon Brief">
+    </div>
+    <div class="field">
+      <label>Website URL</label>
+      <input type="text" id="f-url" placeholder="https://www.carbonbrief.org">
+    </div>
+    <div class="field">
+      <label>RSS Feed URL (optional — leave blank to use Claude fallback)</label>
+      <input type="text" id="f-rss" placeholder="https://www.carbonbrief.org/feed">
+    </div>
+    <div class="field">
+      <label>Update frequency / prominence</label>
+      <select id="f-freq">
+        <option value="sporadic">Sporadic — spotlight, no cap</option>
+        <option value="weekly" selected>Weekly — up to 5 articles</option>
+        <option value="daily">Daily — up to 4 articles</option>
+        <option value="hourly">Hourly — capped at 3</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Region</label>
+      <select id="f-region">
+        <option value="international">International</option>
+        <option value="iceland">Iceland</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-amber" onclick="addSource()">Add Source</button>
+      <button class="btn btn-ghost" onclick="closeModal()">Close</button>
+    </div>
+    <div class="src-list-manage" id="srcListManage"></div>
+  </div>
+</div>
+
+<script>
+// ── RSS PROXY ──
+// Uses rss2json.com free tier (2000 req/day, no key needed for basic use)
+const RSS_PROXY = 'https://api.rss2json.com/v1/api.json?rss_url=';
+
+// ── SOURCE REGISTRY ──
+let SOURCES = [
+  // ── ICELAND · ALTERNATIVE / INVESTIGATIVE ──
+  { id:'ic1', name:'Heimildin', url:'https://heimildin.is', rss:'https://heimildin.is/feed/', freq:'weekly', region:'iceland', enabled:true },
+  { id:'ic2', name:'Stundin (archive)', url:'https://stundin.is', rss:'https://stundin.is/rss/', freq:'weekly', region:'iceland', enabled:true },
+  { id:'ic3', name:'Neistinn', url:'https://neistinn.is', rss:'https://neistinn.is/feed/', freq:'sporadic', region:'iceland', enabled:true },
+
+  // ── ICELAND · MAINSTREAM ──
+  { id:'ic4', name:'RÚV', url:'https://www.ruv.is', rss:'https://www.ruv.is/rss/frettir', freq:'hourly', region:'iceland', enabled:true, maxItems:4 },
+  { id:'ic5', name:'Vísir', url:'https://www.visir.is', rss:'https://www.visir.is/rss/allt', freq:'hourly', region:'iceland', enabled:true, maxItems:4 },
+  { id:'ic6', name:'Morgunblaðið', url:'https://www.mbl.is', rss:'https://www.mbl.is/feeds/innlent/', freq:'daily', region:'iceland', enabled:true, maxItems:5 },
+  { id:'ic7', name:'Fréttablaðið', url:'https://www.frettabladid.is', rss:'https://www.frettabladid.is/rss/', freq:'daily', region:'iceland', enabled:true, maxItems:4 },
+  { id:'ic8', name:'DV', url:'https://www.dv.is', rss:'https://dv.is/feed/', freq:'daily', region:'iceland', enabled:true, maxItems:4 },
+  { id:'ic9', name:'Vísindavefurinn', url:'https://www.visindavefur.is', rss:'https://www.visindavefur.is/feed/', freq:'sporadic', region:'iceland', enabled:true },
+
+  // ── ICELAND · ENGLISH ──
+  { id:'ic10', name:'Reykjavík Grapevine', url:'https://grapevine.is', rss:'https://grapevine.is/feed/', freq:'weekly', region:'iceland', enabled:true, maxItems:5 },
+  { id:'ic11', name:'Iceland Review', url:'https://www.icelandreview.com', rss:'https://www.icelandreview.com/feed/', freq:'daily', region:'iceland', enabled:true, maxItems:4 },
+  { id:'ic12', name:'Iceland Monitor (mbl)', url:'https://icelandmonitor.mbl.is', rss:'https://icelandmonitor.mbl.is/rss/', freq:'daily', region:'iceland', enabled:false, maxItems:3 },
+
+  // ── INTERNATIONAL · SPORADIC / SLOW ──
+  { id:'in1', name:'Hakai Magazine', url:'https://hakaimagazine.com', rss:'https://hakaimagazine.com/feed/', freq:'sporadic', region:'international', enabled:true },
+  { id:'in2', name:'Undark', url:'https://undark.org', rss:'https://undark.org/feed/', freq:'sporadic', region:'international', enabled:true },
+  { id:'in3', name:'Nautilus', url:'https://nautil.us', rss:'https://nautil.us/feed/', freq:'sporadic', region:'international', enabled:true },
+  { id:'in4', name:'Delayed Gratification', url:'https://www.slow-journalism.com', rss:null, freq:'sporadic', region:'international', enabled:true },
+
+  // ── INTERNATIONAL · WEEKLY ──
+  { id:'in5', name:'Jacobin', url:'https://jacobin.com', rss:'https://jacobin.com/feed/', freq:'weekly', region:'international', enabled:true, maxItems:5 },
+  { id:'in6', name:'Current Affairs', url:'https://www.currentaffairs.org', rss:'https://www.currentaffairs.org/feed', freq:'weekly', region:'international', enabled:true, maxItems:5 },
+  { id:'in7', name:'Le Monde Diplomatique', url:'https://mondediplo.com', rss:'https://mondediplo.com/rss/1', freq:'weekly', region:'international', enabled:true, maxItems:5 },
+  { id:'in8', name:'New Statesman', url:'https://www.newstatesman.com', rss:'https://www.newstatesman.com/feed/', freq:'weekly', region:'international', enabled:true, maxItems:5 },
+
+  // ── INTERNATIONAL · DAILY ──
+  { id:'in9', name:'The Guardian', url:'https://www.theguardian.com', rss:'https://www.theguardian.com/world/rss', freq:'daily', region:'international', enabled:true, maxItems:4 },
+  { id:'in10', name:'Carbon Brief', url:'https://www.carbonbrief.org', rss:'https://www.carbonbrief.org/feed/', freq:'daily', region:'international', enabled:true, maxItems:4 },
+
+  // ── INTERNATIONAL · HOURLY ──
+  { id:'in11', name:'BBC News', url:'https://www.bbc.com/news', rss:'https://feeds.bbci.co.uk/news/rss.xml', freq:'hourly', region:'international', enabled:true, maxItems:3 },
+  { id:'in12', name:'Reuters', url:'https://www.reuters.com', rss:'https://feeds.reuters.com/reuters/topNews', freq:'hourly', region:'international', enabled:true, maxItems:3 },
+];
+
+let feedData = {};
+let currentFilter = 'all';
+
+// Persist to localStorage
+function saveState() {
+  const state = SOURCES.map(s => ({ id:s.id, enabled:s.enabled }));
+  localStorage.setItem('amplified-sources', JSON.stringify(state));
+  const custom = SOURCES.filter(s => s.id.startsWith('u'));
+  localStorage.setItem('amplified-custom', JSON.stringify(custom));
+}
+
+function loadState() {
+  try {
+    const state = JSON.parse(localStorage.getItem('amplified-sources') || '[]');
+    state.forEach(s => { const src = SOURCES.find(x => x.id === s.id); if(src) src.enabled = s.enabled; });
+    const custom = JSON.parse(localStorage.getItem('amplified-custom') || '[]');
+    custom.forEach(s => { if(!SOURCES.find(x => x.id === s.id)) SOURCES.push(s); });
+  } catch(e) {}
+}
+
+// ── SIDEBAR ──
+function renderSidebar() {
+  const el = document.getElementById('sidebarInner');
+  const groups = [
+    { label:'Iceland · Alt / Investigative', filter: s => s.region==='iceland' && (s.freq==='sporadic'||s.freq==='weekly') },
+    { label:'Iceland · Mainstream', filter: s => s.region==='iceland' && (s.freq==='daily'||s.freq==='hourly') },
+    { label:'International · Slow Burn', filter: s => s.region==='international' && (s.freq==='sporadic'||s.freq==='weekly') },
+    { label:'International · Daily / Hourly', filter: s => s.region==='international' && (s.freq==='daily'||s.freq==='hourly') },
+  ];
+  let html = '';
+  groups.forEach(g => {
+    const srcs = SOURCES.filter(g.filter);
+    if(!srcs.length) return;
+    html += `<div class="sec-label">${g.label}</div>`;
+    srcs.forEach(s => {
+      const rssIcon = s.rss ? '📡' : '🤖';
+      html += `<div class="src${s.enabled?' active':''}">
+        <div class="pulse ${s.freq}"></div>
+        <div class="src-info">
+          <div class="src-name">${s.name} <span style="font-size:9px;opacity:.4" title="${s.rss?'Has RSS feed':'Claude fallback'}">${rssIcon}</span></div>
+          <div class="src-sub">${s.freq} · ${s.region==='iceland'?'🇮🇸':'🌍'}</div>
+        </div>
+        <button class="toggle ${s.enabled?'on':''}" onclick="toggleSrc('${s.id}',event)"></button>
+      </div>`;
+    });
+  });
+  el.innerHTML = html;
+}
+
+function toggleSrc(id, evt) {
+  evt.stopPropagation();
+  const s = SOURCES.find(x => x.id === id);
+  if(s) { s.enabled = !s.enabled; saveState(); renderSidebar(); }
+}
+
+// ── FETCH RSS via PROXY ──
+async function fetchRSS(source) {
+  if(!source.rss) return null;
+  const limit = source.maxItems || 6;
+  try {
+    const url = `${RSS_PROXY}${encodeURIComponent(source.rss)}&count=${limit + 2}`;
+    const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
+    const data = await res.json();
+    if(data.status !== 'ok' || !data.items?.length) return null;
+    return data.items.slice(0, limit).map(item => ({
+      sourceId: source.id,
+      sourceName: source.name,
+      headline: item.title?.trim() || '(no title)',
+      summary: stripHtml(item.description || item.content || '').slice(0, 160).trim(),
+      url: item.link || source.url,
+      date: item.pubDate ? formatDate(item.pubDate) : '',
+      via: 'rss'
+    }));
+  } catch(e) { return null; }
+}
+
+function stripHtml(html) {
+  const tmp = document.createElement('div');
+  tmp.innerHTML = html;
+  return tmp.textContent || '';
+}
+
+function formatDate(str) {
+  try {
+    const d = new Date(str);
+    const now = new Date();
+    const diff = now - d;
+    if(diff < 3600000) return Math.floor(diff/60000) + 'm ago';
+    if(diff < 86400000) return Math.floor(diff/3600000) + 'h ago';
+    if(diff < 604800000) return Math.floor(diff/86400000) + 'd ago';
+    return d.toLocaleDateString('en-GB', { day:'numeric', month:'short' });
+  } catch(e) { return str; }
+}
+
+// ── FETCH VIA CLAUDE (fallback) ──
+async function fetchClaude(sources) {
+  if(!sources.length) return {};
+  const sourceList = sources.map(s =>
+    `- ID:${s.id} | ${s.name} (${s.url}) | freq:${s.freq} | show max ${s.maxItems||6} items`
+  ).join('\n');
+
+  const prompt = `You are a news aggregator. For each source below, list their most recent significant headlines you know about.
+Return ONLY a JSON array — no markdown, no preamble.
+Each object: { "sourceId": "...", "headline": "...", "summary": "one sentence", "url": "...", "date": "approx date" }
+
+Sources:
+${sourceList}
+
+Rules:
+- hourly sources: only 2-3 top headlines, be very selective
+- sporadic sources: prefer long-form, in-depth pieces
+- Return only the JSON array`;
+
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({
+      model:"claude-sonnet-4-6", max_tokens:3000,
+      messages:[{ role:"user", content:prompt }]
+    })
+  });
+  const data = await res.json();
+  const raw = data.content?.map(i=>i.text||'').join('').replace(/```json|```/g,'').trim();
+  const items = JSON.parse(raw);
+  const result = {};
+  items.forEach(a => {
+    if(!result[a.sourceId]) result[a.sourceId] = [];
+    result[a.sourceId].push({ ...a, via:'claude' });
+  });
+  return result;
+}
+
+// ── MAIN FETCH ──
+async function fetchAll() {
+  const btn = document.getElementById('refreshBtn');
+  btn.disabled = true; btn.textContent = '↻ fetching…';
+
+  const enabled = SOURCES.filter(s => s.enabled);
+  const content = document.getElementById('feedContent');
+  content.innerHTML = `<div class="loading"><div class="spin"></div><div class="loading-txt">Gathering headlines</div><div class="loading-sub">Trying RSS for ${enabled.filter(s=>s.rss).length} sources, Claude fallback for the rest</div></div>`;
+
+  feedData = {};
+  const needsClaude = [];
+
+  // Parallel RSS fetches
+  const rssResults = await Promise.allSettled(enabled.map(s => fetchRSS(s)));
+
+  enabled.forEach((s, i) => {
+    const r = rssResults[i];
+    if(r.status === 'fulfilled' && r.value) {
+      feedData[s.id] = r.value;
+    } else if(r.status === 'rejected' || !r.value) {
+      needsClaude.push(s);
+    }
+  });
+
+  // Claude fallback for sources without RSS or where RSS failed
+  if(needsClaude.length) {
+    try {
+      const claudeData = await fetchClaude(needsClaude);
+      Object.assign(feedData, claudeData);
+    } catch(e) {
+      console.warn('Claude fallback failed:', e);
+    }
+  }
+
+  renderFeed();
+  document.getElementById('lastUpdated').textContent = 'updated ' + new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+  btn.disabled = false; btn.textContent = '↻ Refresh';
+}
+
+// ── RENDER ──
+function renderFeed() {
+  const content = document.getElementById('feedContent');
+  const freqOrder = ['sporadic','weekly','daily','hourly'];
+
+  const visible = SOURCES.filter(s => {
+    if(!s.enabled) return false;
+    if(!feedData[s.id]?.length) return false;
+    if(currentFilter === 'iceland') return s.region === 'iceland';
+    if(currentFilter === 'international') return s.region === 'international';
+    if(currentFilter !== 'all' && s.freq !== currentFilter) return false;
+    return true;
+  }).sort((a,b) => {
+    if(a.region !== b.region) return a.region === 'iceland' ? -1 : 1;
+    return freqOrder.indexOf(a.freq) - freqOrder.indexOf(b.freq);
+  });
+
+  if(!visible.length) {
+    content.innerHTML = `<div class="empty">No articles to show.<br>Try a different filter or click ↻ Refresh.</div>`;
+    return;
+  }
+
+  let total = 0, html = '';
+  visible.forEach(s => {
+    const articles = feedData[s.id] || [];
+    const via = articles[0]?.via;
+    const viaTag = via === 'rss'
+      ? `<span class="rss-status rss-live">RSS live</span>`
+      : via === 'claude'
+      ? `<span class="rss-status rss-fallback">Claude</span>`
+      : '';
+    const flag = s.region === 'iceland' ? '🇮🇸 ' : '';
+
+    html += `<div class="src-group">
+      <div class="grp-header">
+        <div class="pulse ${s.freq}" style="width:8px;height:8px"></div>
+        <div class="grp-name">${flag}${s.name}</div>
+        <div class="grp-badge b-${s.freq}">${s.freq}</div>
+        ${viaTag}
+        <a class="grp-link" href="${s.url}" target="_blank">visit ↗</a>
+      </div>
+      <div class="news-grid">`;
+
+    articles.forEach(a => {
+      total++;
+      const spot = s.freq === 'sporadic';
+      html += `<a class="card${spot?' spot':''}" href="${a.url}" target="_blank">
+        <div class="card-hed">${a.headline}</div>
+        ${a.summary ? `<div class="card-desc">${a.summary}</div>` : ''}
+        <div class="card-meta">${a.date || ''}</div>
+      </a>`;
+    });
+    html += `</div></div>`;
+  });
+
+  content.innerHTML = html;
+  document.getElementById('feedCount').textContent = `${total} article${total!==1?'s':''}`;
+}
+
+// ── FILTER ──
+function setFilter(f, btn) {
+  currentFilter = f;
+  document.querySelectorAll('.f-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  if(Object.keys(feedData).length) renderFeed();
+}
+
+// ── MODAL ──
+function openModal() {
+  renderManageList();
+  document.getElementById('modalBg').classList.add('open');
+}
+function closeModal() { document.getElementById('modalBg').classList.remove('open'); }
+function closeModalBg(e) { if(e.target === document.getElementById('modalBg')) closeModal(); }
+
+function renderManageList() {
+  const el = document.getElementById('srcListManage');
+  let html = '<div style="font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin-bottom:10px">Current Sources</div>';
+  SOURCES.forEach(s => {
+    html += `<div class="src-row">
+      <div class="src-row-name">${s.region==='iceland'?'🇮🇸 ':'🌍 '}${s.name}</div>
+      <div class="src-row-freq">${s.freq}</div>
+      ${s.id.startsWith('u') ? `<button class="del-btn" onclick="deleteSrc('${s.id}')">✕</button>` : '<span style="width:22px"></span>'}
+    </div>`;
+  });
+  el.innerHTML = html;
+}
+
+function addSource() {
+  const name = document.getElementById('f-name').value.trim();
+  const url = document.getElementById('f-url').value.trim();
+  const rss = document.getElementById('f-rss').value.trim();
+  const freq = document.getElementById('f-freq').value;
+  const region = document.getElementById('f-region').value;
+  if(!name || !url) { alert('Name and URL are required.'); return; }
+  const id = 'u' + Date.now();
+  const maxMap = { sporadic:null, weekly:5, daily:4, hourly:3 };
+  SOURCES.push({ id, name, url, rss: rss||null, freq, region, enabled:true, maxItems: maxMap[freq] });
+  saveState();
+  renderSidebar();
+  renderManageList();
+  document.getElementById('f-name').value = '';
+  document.getElementById('f-url').value = '';
+  document.getElementById('f-rss').value = '';
+}
+
+function deleteSrc(id) {
+  if(!confirm('Remove this source?')) return;
+  SOURCES = SOURCES.filter(s => s.id !== id);
+  saveState();
+  renderSidebar();
+  renderManageList();
+}
+
+// ── INIT ──
+loadState();
+renderSidebar();
+</script>
+</body>
+</html>
