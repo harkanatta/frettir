@@ -217,8 +217,9 @@
 
 <script>
 // ── RSS PROXY ──
-// Uses rss2json.com free tier (2000 req/day, no key needed for basic use)
-const RSS_PROXY = 'https://api.rss2json.com/v1/api.json?rss_url=';
+// Server-side Netlify Function: fetches + parses the feed itself, so there's
+// no third-party dependency and no CORS issue.
+const RSS_PROXY = '/.netlify/functions/rss-proxy?url=';
 
 // ── SOURCE REGISTRY ──
 let SOURCES = [
@@ -374,13 +375,10 @@ Rules:
 - sporadic sources: prefer long-form, in-depth pieces
 - Return only the JSON array`;
 
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
+  const res = await fetch("/.netlify/functions/claude-proxy", {
     method:"POST",
     headers:{"Content-Type":"application/json"},
-    body: JSON.stringify({
-      model:"claude-sonnet-4-6", max_tokens:3000,
-      messages:[{ role:"user", content:prompt }]
-    })
+    body: JSON.stringify({ prompt })
   });
   const data = await res.json();
   const raw = data.content?.map(i=>i.text||'').join('').replace(/```json|```/g,'').trim();
