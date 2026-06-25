@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -32,9 +32,10 @@
   .sec-label { font-size:9px; font-weight:600; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); padding:0 16px 7px; margin-top:14px; }
   .sec-label:first-child { margin-top:0; }
 
-  .src { display:flex; align-items:center; gap:9px; padding:8px 16px; cursor:default; border-left:2px solid transparent; transition:background .15s; }
+  .src { display:flex; align-items:center; gap:9px; padding:8px 16px; cursor:pointer; border-left:2px solid transparent; transition:background .15s; }
   .src:hover { background:rgba(240,237,230,0.04); }
   .src.active { border-left-color:var(--amber); background:rgba(240,237,230,0.05); }
+  .src.selected { border-left-color:var(--steel); background:rgba(58,107,138,.18); }
 
   .pulse { width:9px; height:9px; border-radius:50%; flex-shrink:0; }
   .pulse.sporadic { background:var(--amber); animation:glow 3s ease-in-out infinite; }
@@ -264,6 +265,7 @@ let SOURCES = [
 
 let feedData = {};
 let currentFilter = 'all';
+let currentSourceFilter = null;
 
 // Persist to localStorage
 function saveState() {
@@ -315,6 +317,18 @@ function toggleSrc(id, evt) {
   evt.stopPropagation();
   const s = SOURCES.find(x => x.id === id);
   if(s) { s.enabled = !s.enabled; saveState(); renderSidebar(); }
+}
+
+function filterBySource(id) {
+  currentSourceFilter = (currentSourceFilter === id) ? null : id;
+  document.querySelectorAll('.f-btn').forEach(b=>b.classList.remove('active'));
+  if(!currentSourceFilter) {
+    currentFilter = 'all';
+    const allBtn = document.querySelector('.f-btn');
+    if(allBtn) allBtn.classList.add('active');
+  }
+  renderSidebar();
+  if(Object.keys(feedData).length) renderFeed();
 }
 
 // ── FETCH RSS via PROXY ──
@@ -438,6 +452,7 @@ function renderFeed() {
   const visible = SOURCES.filter(s => {
     if(!s.enabled) return false;
     if(!feedData[s.id]?.length) return false;
+    if(currentSourceFilter) return s.id === currentSourceFilter;
     if(currentFilter === 'iceland') return s.region === 'iceland';
     if(currentFilter === 'international') return s.region === 'international';
     if(currentFilter !== 'all' && s.freq !== currentFilter) return false;
@@ -492,8 +507,10 @@ function renderFeed() {
 // ── FILTER ──
 function setFilter(f, btn) {
   currentFilter = f;
+  currentSourceFilter = null;
   document.querySelectorAll('.f-btn').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
+  renderSidebar();
   if(Object.keys(feedData).length) renderFeed();
 }
 
