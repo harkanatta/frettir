@@ -111,20 +111,31 @@
   ::-webkit-scrollbar { width:4px; } ::-webkit-scrollbar-track { background:transparent; }
   ::-webkit-scrollbar-thumb { background:rgba(240,237,230,.1); border-radius:2px; }
 
-  @media(max-width:680px) { aside{display:none} main{padding:14px 14px} .news-grid{grid-template-columns:1fr} }
+  .sidebar-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:150; }
+  .sidebar-overlay.open { display:block; }
+  aside { transform:translateX(0); transition:transform .25s ease; }
+  @media(max-width:680px) {
+    aside { position:fixed; top:0; left:0; height:100vh; z-index:160; transform:translateX(-100%); }
+    aside.open { transform:translateX(0); }
+    main { padding:16px 14px; }
+    .news-grid { grid-template-columns:1fr; }
+  }
+
+  .menu-btn { display:none; background:rgba(240,237,230,.08); border:1px solid rgba(240,237,230,.12); color:var(--page); font-size:18px; line-height:1; padding:8px 12px; border-radius:var(--radius); cursor:pointer; }
+  @media(max-width:680px) { .menu-btn { display:flex; align-items:center; } }
 </style>
 </head>
 <body>
 
 <header>
   <div class="logo">amplified<span>·</span></div>
-  <div class="header-right">
+  <div class="header-right"><button class="menu-btn" onclick="toggleSidebar()" aria-label="Toggle sources">☰</button>
     <span class="last-updated" id="lastUpdated">not yet fetched</span>
     <button class="btn btn-amber" id="refreshBtn" onclick="fetchAll()">↻ Refresh</button>
   </div>
 </header>
 
-<div class="app">
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div><div class="app">
   <aside>
     <div class="sidebar-top"><button class="sel-btn" onclick="selectAll()">All on</button><button class="sel-btn" onclick="selectNone()">All off</button></div>
     <div class="sidebar-inner" id="sidebarInner"></div>
@@ -456,6 +467,13 @@ function setFilter(f, btn) {
   btn.classList.add('active');
   renderSidebar();
   if(Object.keys(feedData).length) renderFeed();
+}
+
+function toggleSidebar() {
+  const aside = document.querySelector('aside');
+  const overlay = document.getElementById('sidebarOverlay');
+  aside.classList.toggle('open');
+  overlay.classList.toggle('open');
 }
 
 // ── INIT ──
