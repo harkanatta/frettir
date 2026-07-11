@@ -126,10 +126,9 @@
     main { padding:16px 14px; }
     .news-grid { grid-template-columns:1fr; }
 
-    header { transition: transform .25s ease; }
-    aside { transition: transform .25s ease; }
-    header.hide-ui { transform: translateY(-100%); }
-    aside.hide-ui { transform: translateY(-100%); }
+    html, body { height:auto; overflow:auto; }
+    .app { height:auto; overflow:visible; }
+    main { overflow:visible; height:auto; min-height:70vh; }
   }
 </style>
 </head>
