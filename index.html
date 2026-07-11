@@ -9,30 +9,34 @@
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
-    --ink: #0E0F13; --page: #F0EDE6; --sage: #7A9E87; --amber: #D4873A;
-    --steel: #3A6B8A; --muted: #8A8880; --border: rgba(240,237,230,0.09);
+    --ink: #0E0F13; --ink2: #13151b; --page: #F0EDE6; --sage: #7A9E87; --amber: #D4873A;
+    --steel: #3A6B8A; --muted: #7a7870; --border: rgba(240,237,230,0.08); --radius: 6px;
   }
-  body { background:var(--ink); color:var(--page); font-family:'IBM Plex Mono',monospace; font-size:13px; min-height:100vh; display:flex; flex-direction:column; }
+  body { background:var(--ink); color:var(--page); font-family:'IBM Plex Mono',monospace; font-size:14px; min-height:100vh; display:flex; flex-direction:column; }
 
-  header { display:flex; align-items:center; justify-content:space-between; padding:13px 22px; border-bottom:1px solid var(--border); position:sticky; top:0; z-index:100; background:var(--ink); gap:12px; flex-wrap:wrap; }
-  .logo { font-family:'Newsreader',serif; font-size:21px; font-weight:300; font-style:italic; color:var(--page); letter-spacing:-0.02em; flex-shrink:0; }
+  header { display:flex; align-items:center; justify-content:space-between; padding:16px 28px; border-bottom:1px solid var(--border); position:sticky; top:0; z-index:100; background:rgba(14,15,19,.97); backdrop-filter:blur(8px); gap:14px; flex-wrap:wrap; }
+  .logo { font-family:'Newsreader',serif; font-size:26px; font-weight:300; font-style:italic; color:var(--page); letter-spacing:-0.02em; flex-shrink:0; }
   .logo span { color:var(--amber); }
   .header-right { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
   .last-updated { font-size:10px; color:var(--muted); letter-spacing:.04em; }
-  .btn { border:none; font-family:'IBM Plex Mono',monospace; font-size:11px; font-weight:600; letter-spacing:.05em; text-transform:uppercase; cursor:pointer; padding:7px 14px; transition:opacity .2s; }
+  .btn { border:none; font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; cursor:pointer; padding:10px 20px; border-radius:var(--radius); transition:all .18s; }
   .btn-amber { background:var(--amber); color:var(--ink); }
-  .btn-ghost { background:rgba(240,237,230,0.07); color:var(--page); }
-  .btn:hover { opacity:.8; } .btn:disabled { opacity:.35; cursor:not-allowed; }
+  .btn-amber:hover { background:#e8983f; transform:translateY(-1px); box-shadow:0 4px 14px rgba(212,135,58,.35); }
+  .btn-ghost { background:rgba(240,237,230,0.08); color:var(--page); border:1px solid rgba(240,237,230,.12); }
+  .btn-ghost:hover { background:rgba(240,237,230,0.13); }
+  .btn:disabled { opacity:.35; cursor:not-allowed; transform:none !important; box-shadow:none !important; }
 
   .app { display:flex; flex:1; min-height:0; }
 
   /* SIDEBAR */
-  aside { width:252px; flex-shrink:0; background:#0a0b0e; border-right:1px solid var(--border); overflow-y:auto; display:flex; flex-direction:column; }
-  .sidebar-inner { flex:1; padding:16px 0; }
-  .sec-label { font-size:9px; font-weight:600; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); padding:0 16px 7px; margin-top:14px; }
-  .sec-label:first-child { margin-top:0; }
+  aside { width:290px; flex-shrink:0; background:#13151b; border-right:1px solid var(--border); overflow-y:auto; display:flex; flex-direction:column; }
+  .sidebar-top { padding:14px 18px 10px; border-bottom:1px solid var(--border); display:flex; gap:8px; }
+  .sel-btn { flex:1; padding:8px 0; font-family:'IBM Plex Mono',monospace; font-size:11px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; cursor:pointer; border-radius:var(--radius); border:1px solid rgba(240,237,230,.1); background:rgba(240,237,230,.05); color:var(--muted); transition:all .15s; }
+  .sel-btn:hover { background:rgba(240,237,230,.1); color:var(--page); border-color:rgba(240,237,230,.2); }
+  .sidebar-inner { flex:1; padding:8px 0 16px; }
+  .sec-label { font-size:10px; font-weight:600; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); padding:14px 18px 6px; }
 
-  .src { display:flex; align-items:center; gap:9px; padding:8px 16px; cursor:pointer; border-left:2px solid transparent; transition:background .15s; }
+  .src { display:flex; align-items:center; gap:10px; padding:10px 18px; cursor:default; border-left:3px solid transparent; transition:background .12s; }
   .src:hover { background:rgba(240,237,230,0.04); }
   .src.active { border-left-color:var(--amber); background:rgba(240,237,230,0.05); }
   .src.selected { border-left-color:var(--steel); background:rgba(58,107,138,.18); }
@@ -45,13 +49,13 @@
   @keyframes glow { 0%,100%{box-shadow:0 0 0 0 rgba(212,135,58,.5)} 50%{box-shadow:0 0 0 5px rgba(212,135,58,0)} }
 
   .src-info { flex:1; min-width:0; }
-  .src-name { font-size:11px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:var(--page); }
-  .src-sub { font-size:9px; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; margin-top:2px; }
+  .src-name { font-size:12px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:var(--page); }
+  .src-sub { font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; margin-top:2px; }
 
-  .toggle { width:26px; height:14px; border-radius:7px; border:none; cursor:pointer; position:relative; flex-shrink:0; background:rgba(240,237,230,.1); transition:background .2s; }
+  .toggle { width:36px; height:20px; border-radius:10px; border:none; cursor:pointer; position:relative; flex-shrink:0; background:rgba(240,237,230,.12); transition:background .2s; }
   .toggle.on { background:var(--sage); }
-  .toggle::after { content:''; position:absolute; top:2px; left:2px; width:10px; height:10px; border-radius:50%; background:#fff; transition:transform .2s; }
-  .toggle.on::after { transform:translateX(12px); }
+  .toggle::after { content:''; position:absolute; top:3px; left:3px; width:14px; height:14px; border-radius:50%; background:#fff; transition:transform .2s; box-shadow:0 1px 3px rgba(0,0,0,.3); }
+  .toggle.on::after { transform:translateX(16px); }
 
   .sidebar-footer { padding:10px 16px; border-top:1px solid var(--border); }
   .add-btn { width:100%; background:transparent; border:1px dashed rgba(240,237,230,.15); color:var(--muted); font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:.06em; text-transform:uppercase; padding:8px; cursor:pointer; transition:all .15s; }
@@ -68,9 +72,9 @@
   .leg-dot { width:7px; height:7px; border-radius:50%; }
 
   .filter-bar { display:flex; gap:7px; margin-bottom:22px; flex-wrap:wrap; }
-  .f-btn { padding:5px 11px; border:1px solid rgba(240,237,230,.1); background:transparent; color:var(--muted); font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:.06em; text-transform:uppercase; cursor:pointer; transition:all .15s; }
-  .f-btn:hover { border-color:rgba(240,237,230,.3); color:var(--page); }
-  .f-btn.active { background:var(--amber); border-color:var(--amber); color:var(--ink); }
+  .f-btn { padding:8px 16px; border:1px solid rgba(240,237,230,.1); background:rgba(240,237,230,.04); color:var(--muted); font-family:'IBM Plex Mono',monospace; font-size:11px; font-weight:500; letter-spacing:.05em; text-transform:uppercase; cursor:pointer; border-radius:20px; transition:all .15s; }
+  .f-btn:hover { border-color:rgba(240,237,230,.25); color:var(--page); background:rgba(240,237,230,.08); }
+  .f-btn.active { background:var(--amber); border-color:var(--amber); color:var(--ink); font-weight:600; }
 
   .rss-status { font-size:10px; padding:3px 9px; border-radius:2px; text-transform:uppercase; letter-spacing:.05em; }
   .rss-live { background:rgba(122,158,135,.2); color:var(--sage); }
@@ -89,13 +93,13 @@
   .grp-link:hover { color:var(--amber); }
 
   .news-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(270px,1fr)); gap:10px; }
-  .card { background:rgba(240,237,230,.04); border:1px solid rgba(240,237,230,.07); padding:13px 15px; text-decoration:none; display:block; transition:border-color .15s, background .15s; }
-  .card:hover { border-color:rgba(240,237,230,.18); background:rgba(240,237,230,.07); }
+  .card { background:rgba(240,237,230,.04); border:1px solid rgba(240,237,230,.07); padding:18px 20px; text-decoration:none; display:block; border-radius:var(--radius); transition:all .18s; }
+  .card:hover { border-color:rgba(240,237,230,.2); background:rgba(240,237,230,.08); transform:translateY(-1px); box-shadow:0 4px 16px rgba(0,0,0,.3); }
   .card.spot { border-color:rgba(212,135,58,.28); background:rgba(212,135,58,.04); }
   .card.spot:hover { border-color:rgba(212,135,58,.5); }
-  .card-hed { font-family:'Newsreader',serif; font-size:15px; font-weight:300; line-height:1.45; color:var(--page); margin-bottom:7px; }
-  .card-desc { font-size:11px; color:rgba(240,237,230,.55); line-height:1.5; margin-bottom:8px; }
-  .card-meta { font-size:10px; color:var(--muted); }
+  .card-hed { font-family:'Newsreader',serif; font-size:17px; font-weight:300; line-height:1.45; color:var(--page); margin-bottom:9px; }
+  .card-desc { font-size:12px; color:rgba(240,237,230,.5); line-height:1.55; margin-bottom:10px; }
+  .card-meta { font-size:11px; color:var(--muted); }
 
   .empty { padding:60px 0; text-align:center; color:var(--muted); font-size:12px; line-height:2; }
   .spin { width:28px; height:28px; border:2px solid rgba(240,237,230,.1); border-top-color:var(--amber); border-radius:50%; animation:spin .8s linear infinite; margin:0 auto 14px; }
@@ -122,6 +126,7 @@
 
 <div class="app">
   <aside>
+    <div class="sidebar-top"><button class="sel-btn" onclick="selectAll()">All on</button><button class="sel-btn" onclick="selectNone()">All off</button></div>
     <div class="sidebar-inner" id="sidebarInner"></div>
   </aside>
 
@@ -254,6 +259,9 @@ function toggleSrc(id, evt) {
   const s = SOURCES.find(x => x.id === id);
   if(s) { s.enabled = !s.enabled; saveState(); renderSidebar(); }
 }
+
+function selectAll() { SOURCES.forEach(s => s.enabled = true); saveState(); renderSidebar(); }
+function selectNone() { SOURCES.forEach(s => s.enabled = false); saveState(); renderSidebar(); }
 
 function filterBySource(id) {
   currentSourceFilter = (currentSourceFilter === id) ? null : id;
