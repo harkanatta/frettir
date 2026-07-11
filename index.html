@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="is">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Amplified · News</title>
+<title>Fréttir</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,500;1,6..72,300&display=swap" rel="stylesheet">
 <style>
@@ -136,43 +136,43 @@
 <body>
 
 <header>
-  <div class="logo">amplified<span>·</span></div>
+  <div class="logo">Fréttir<span>·</span></div>
   <div class="header-right">
-    <span class="last-updated" id="lastUpdated">not yet fetched</span>
-    <button class="btn btn-amber" id="refreshBtn" onclick="fetchAll()">↻ Refresh</button>
+    <span class="last-updated" id="lastUpdated">ekki sótt enn</span>
+    <button class="btn btn-amber" id="refreshBtn" onclick="fetchAll()">↻ Uppfæra</button>
   </div>
 </header>
 
 <div class="app">
   <aside>
-    <div class="sidebar-top"><button class="sel-btn" onclick="selectAll()">All on</button><button class="sel-btn" onclick="selectNone()">All off</button></div>
+    <div class="sidebar-top"><button class="sel-btn" onclick="selectAll()">Kveikja allt</button><button class="sel-btn" onclick="selectNone()">Slökkva allt</button></div>
     <div class="sidebar-inner" id="sidebarInner"></div>
   </aside>
 
   <main>
     <div class="feed-header">
-      <div class="feed-title">Today's feed</div>
+      <div class="feed-title">Fréttir dagsins</div>
       <div class="feed-count" id="feedCount"></div>
     </div>
     <div class="legend">
-      <div class="leg"><div class="leg-dot" style="background:var(--amber)"></div>sporadic · spotlight</div>
-      <div class="leg"><div class="leg-dot" style="background:var(--sage)"></div>weekly</div>
-      <div class="leg"><div class="leg-dot" style="background:#6aadd5"></div>daily</div>
-      <div class="leg"><div class="leg-dot" style="background:#c88"></div>hourly · limited</div>
+      <div class="leg"><div class="leg-dot" style="background:var(--amber)"></div>óreglulegt · í kastljósi</div>
+      <div class="leg"><div class="leg-dot" style="background:var(--sage)"></div>vikulegt</div>
+      <div class="leg"><div class="leg-dot" style="background:#6aadd5"></div>daglegt</div>
+      <div class="leg"><div class="leg-dot" style="background:#c88"></div>klukkutíma · takmarkað</div>
     </div>
     <div class="filter-bar">
-      <button class="f-btn active" onclick="setFilter('all',this)">All</button>
-      <button class="f-btn" onclick="setFilter('sporadic',this)">Sporadic</button>
-      <button class="f-btn" onclick="setFilter('weekly',this)">Weekly</button>
-      <button class="f-btn" onclick="setFilter('daily',this)">Daily</button>
-      <button class="f-btn" onclick="setFilter('hourly',this)">Hourly</button>
-      <button class="f-btn" onclick="setFilter('iceland',this)">🇮🇸 Iceland</button>
-      <button class="f-btn" onclick="setFilter('international',this)">🌍 International</button>
+      <button class="f-btn active" onclick="setFilter('all',this)">Allt</button>
+      <button class="f-btn" onclick="setFilter('sporadic',this)">Óreglulegt</button>
+      <button class="f-btn" onclick="setFilter('weekly',this)">Vikulegt</button>
+      <button class="f-btn" onclick="setFilter('daily',this)">Daglegt</button>
+      <button class="f-btn" onclick="setFilter('hourly',this)">Klukkutíma</button>
+      <button class="f-btn" onclick="setFilter('iceland',this)">🇮🇸 Ísland</button>
+      <button class="f-btn" onclick="setFilter('international',this)">🌍 Erlent</button>
     </div>
     <div id="feedContent">
       <div class="loading">
-        <div style="font-family:'Newsreader',serif;font-size:24px;font-style:italic;color:rgba(26,26,26,.2);margin-bottom:10px">no news yet</div>
-        <div class="loading-sub">Click ↻ Refresh to fetch from your sources</div>
+        <div style="font-family:'Newsreader',serif;font-size:24px;font-style:italic;color:rgba(26,26,26,.2);margin-bottom:10px">engar fréttir enn</div>
+        <div class="loading-sub">Smelltu á ↻ Uppfæra til að sækja fréttir frá heimildum þínum</div>
       </div>
     </div>
   </main>
@@ -231,6 +231,8 @@ let feedData = {};
 let currentFilter = 'all';
 let currentSourceFilter = null;
 
+const FREQ_LABELS = { sporadic:'óreglulegt', weekly:'vikulegt', daily:'daglegt', hourly:'klukkutíma' };
+
 // Persist to localStorage
 function saveState() {
   const state = SOURCES.map(s => ({ id:s.id, enabled:s.enabled }));
@@ -248,10 +250,10 @@ function loadState() {
 function renderSidebar() {
   const el = document.getElementById('sidebarInner');
   const groups = [
-    { label:'Iceland · Alt / Investigative', filter: s => s.region==='iceland' && (s.freq==='sporadic'||s.freq==='weekly') },
-    { label:'Iceland · Mainstream', filter: s => s.region==='iceland' && (s.freq==='daily'||s.freq==='hourly') },
-    { label:'International · Slow Burn', filter: s => s.region==='international' && (s.freq==='sporadic'||s.freq==='weekly') },
-    { label:'International · Daily / Hourly', filter: s => s.region==='international' && (s.freq==='daily'||s.freq==='hourly') },
+    { label:'Ísland · Óhefðbundið / Rannsóknarblaðamennska', filter: s => s.region==='iceland' && (s.freq==='sporadic'||s.freq==='weekly') },
+    { label:'Ísland · Hefðbundið', filter: s => s.region==='iceland' && (s.freq==='daily'||s.freq==='hourly') },
+    { label:'Erlent · Hægfara', filter: s => s.region==='international' && (s.freq==='sporadic'||s.freq==='weekly') },
+    { label:'Erlent · Daglegt / Klukkutíma', filter: s => s.region==='international' && (s.freq==='daily'||s.freq==='hourly') },
   ];
   let html = '';
   groups.forEach(g => {
@@ -263,8 +265,8 @@ function renderSidebar() {
       html += `<div class="src${s.enabled?' active':''}">
         <div class="pulse ${s.freq}"></div>
         <div class="src-info">
-          <div class="src-name">${s.name} <span style="font-size:9px;opacity:.4" title="${s.rss?'Has RSS feed':'Claude fallback'}">${rssIcon}</span></div>
-          <div class="src-sub">${s.freq} · ${s.region==='iceland'?'🇮🇸':'🌍'}</div>
+          <div class="src-name">${s.name} <span style="font-size:9px;opacity:.4" title="${s.rss?'Er með RSS straum':'Notar Claude til vara'}">${rssIcon}</span></div>
+          <div class="src-sub">${FREQ_LABELS[s.freq]} · ${s.region==='iceland'?'🇮🇸':'🌍'}</div>
         </div>
         <button class="toggle ${s.enabled?'on':''}" onclick="toggleSrc('${s.id}',event)"></button>
       </div>`;
@@ -306,7 +308,7 @@ async function fetchRSS(source) {
     return data.items.slice(0, limit).map(item => ({
       sourceId: source.id,
       sourceName: source.name,
-      headline: item.title?.trim() || '(no title)',
+      headline: item.title?.trim() || '(enginn titill)',
       summary: stripHtml(item.description || item.content || '').slice(0, 160).trim(),
       url: item.link || source.url,
       date: item.pubDate ? formatDate(item.pubDate) : '',
@@ -326,10 +328,11 @@ function formatDate(str) {
     const d = new Date(str);
     const now = new Date();
     const diff = now - d;
-    if(diff < 3600000) return Math.floor(diff/60000) + 'm ago';
-    if(diff < 86400000) return Math.floor(diff/3600000) + 'h ago';
-    if(diff < 604800000) return Math.floor(diff/86400000) + 'd ago';
-    return d.toLocaleDateString('en-GB', { day:'numeric', month:'short' });
+    if(diff < 60000) return 'rétt í þessu';
+    if(diff < 3600000) return Math.floor(diff/60000) + ' mín.';
+    if(diff < 86400000) return Math.floor(diff/3600000) + ' klst.';
+    if(diff < 604800000) return Math.floor(diff/86400000) + ' d síðan';
+    return d.toLocaleDateString('is-IS', { day:'numeric', month:'short' });
   } catch(e) { return str; }
 }
 
@@ -371,11 +374,11 @@ Rules:
 // ── MAIN FETCH ──
 async function fetchAll() {
   const btn = document.getElementById('refreshBtn');
-  btn.disabled = true; btn.textContent = '↻ fetching…';
+  btn.disabled = true; btn.textContent = '↻ sæki…';
 
   const enabled = SOURCES.filter(s => s.enabled);
   const content = document.getElementById('feedContent');
-  content.innerHTML = `<div class="loading"><div class="spin"></div><div class="loading-txt">Gathering headlines</div><div class="loading-sub">Trying RSS for ${enabled.filter(s=>s.rss).length} sources, Claude fallback for the rest</div></div>`;
+  content.innerHTML = `<div class="loading"><div class="spin"></div><div class="loading-txt">Sæki fyrirsagnir</div><div class="loading-sub">Reyni RSS fyrir ${enabled.filter(s=>s.rss).length} heimildir, Claude til vara fyrir afganginn</div></div>`;
 
   feedData = {};
   const needsClaude = [];
@@ -403,8 +406,8 @@ async function fetchAll() {
   }
 
   renderFeed();
-  document.getElementById('lastUpdated').textContent = 'updated ' + new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
-  btn.disabled = false; btn.textContent = '↻ Refresh';
+  document.getElementById('lastUpdated').textContent = 'uppfært ' + new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+  btn.disabled = false; btn.textContent = '↻ Uppfæra';
 }
 
 // ── RENDER ──
@@ -426,7 +429,7 @@ function renderFeed() {
   });
 
   if(!visible.length) {
-    content.innerHTML = `<div class="empty">No articles to show.<br>Try a different filter or click ↻ Refresh.</div>`;
+    content.innerHTML = `<div class="empty">Engar greinar til að sýna.<br>Prófaðu aðra síu eða smelltu á ↻ Uppfæra.</div>`;
     return;
   }
 
@@ -435,7 +438,7 @@ function renderFeed() {
     const articles = feedData[s.id] || [];
     const via = articles[0]?.via;
     const viaTag = via === 'rss'
-      ? `<span class="rss-status rss-live">RSS live</span>`
+      ? `<span class="rss-status rss-live">RSS beint</span>`
       : via === 'claude'
       ? `<span class="rss-status rss-fallback">Claude</span>`
       : '';
@@ -445,9 +448,9 @@ function renderFeed() {
       <div class="grp-header">
         <div class="pulse ${s.freq}" style="width:8px;height:8px"></div>
         <div class="grp-name">${flag}${s.name}</div>
-        <div class="grp-badge b-${s.freq}">${s.freq}</div>
+        <div class="grp-badge b-${s.freq}">${FREQ_LABELS[s.freq]}</div>
         ${viaTag}
-        <a class="grp-link" href="${s.url}" target="_blank">visit ↗</a>
+        <a class="grp-link" href="${s.url}" target="_blank">opna ↗</a>
       </div>
       <div class="news-grid">`;
 
@@ -464,7 +467,7 @@ function renderFeed() {
   });
 
   content.innerHTML = html;
-  document.getElementById('feedCount').textContent = `${total} article${total!==1?'s':''}`;
+  document.getElementById('feedCount').textContent = `${total} grein${total!==1?'ar':''}`;
 }
 
 // ── FILTER ──
