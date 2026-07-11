@@ -125,6 +125,11 @@
     .src-name { white-space:nowrap; }
     main { padding:16px 14px; }
     .news-grid { grid-template-columns:1fr; }
+
+    header { transition: transform .25s ease; }
+    aside { transition: transform .25s ease; }
+    header.hide-ui { transform: translateY(-100%); }
+    aside.hide-ui { transform: translateY(-100%); }
   }
 </style>
 </head>
@@ -471,6 +476,25 @@ function setFilter(f, btn) {
   renderSidebar();
   if(Object.keys(feedData).length) renderFeed();
 }
+
+// ── SCROLL AUTO-HIDE (mobile) ──
+(function() {
+  let lastY = 0;
+  const scroller = document.querySelector('main');
+  const header = document.querySelector('header');
+  const aside = document.querySelector('aside');
+  scroller.addEventListener('scroll', function() {
+    const y = scroller.scrollTop;
+    if (y > lastY && y > 60) {
+      header.classList.add('hide-ui');
+      aside.classList.add('hide-ui');
+    } else {
+      header.classList.remove('hide-ui');
+      aside.classList.remove('hide-ui');
+    }
+    lastY = y;
+  }, { passive: true });
+})();
 
 // ── INIT ──
 loadState();
