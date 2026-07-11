@@ -104,24 +104,6 @@
   .loading-txt { font-size:12px; letter-spacing:.06em; text-transform:uppercase; margin-bottom:5px; }
   .loading-sub { font-size:10px; color:rgba(138,136,128,.55); }
 
-  /* MODAL */
-  .modal-bg { display:none; position:fixed; inset:0; background:rgba(0,0,0,.7); z-index:200; align-items:center; justify-content:center; }
-  .modal-bg.open { display:flex; }
-  .modal { background:#13151a; border:1px solid rgba(240,237,230,.12); padding:28px; width:min(480px,92vw); max-height:85vh; overflow-y:auto; }
-  .modal h2 { font-family:'Newsreader',serif; font-size:20px; font-weight:300; font-style:italic; margin-bottom:20px; }
-  .field { margin-bottom:14px; }
-  .field label { display:block; font-size:10px; letter-spacing:.07em; text-transform:uppercase; color:var(--muted); margin-bottom:5px; }
-  .field input, .field select { width:100%; background:rgba(240,237,230,.05); border:1px solid rgba(240,237,230,.12); color:var(--page); font-family:'IBM Plex Mono',monospace; font-size:12px; padding:8px 10px; outline:none; }
-  .field input:focus, .field select:focus { border-color:var(--amber); }
-  .field select option { background:#13151a; }
-  .modal-actions { display:flex; gap:9px; margin-top:20px; }
-  .src-list-manage { margin-top:20px; border-top:1px solid var(--border); padding-top:16px; }
-  .src-row { display:flex; align-items:center; gap:8px; padding:7px 0; border-bottom:1px solid var(--border); font-size:11px; }
-  .src-row-name { flex:1; }
-  .src-row-freq { font-size:9px; color:var(--muted); text-transform:uppercase; }
-  .del-btn { background:transparent; border:none; color:#e88; cursor:pointer; font-size:13px; padding:0 4px; }
-  .del-btn:hover { color:#ff6b6b; }
-
   ::-webkit-scrollbar { width:4px; } ::-webkit-scrollbar-track { background:transparent; }
   ::-webkit-scrollbar-thumb { background:rgba(240,237,230,.1); border-radius:2px; }
 
@@ -134,7 +116,6 @@
   <div class="logo">amplified<span>·</span></div>
   <div class="header-right">
     <span class="last-updated" id="lastUpdated">not yet fetched</span>
-    <button class="btn btn-ghost" onclick="openModal()">⚙ Sources</button>
     <button class="btn btn-amber" id="refreshBtn" onclick="fetchAll()">↻ Refresh</button>
   </div>
 </header>
@@ -142,9 +123,6 @@
 <div class="app">
   <aside>
     <div class="sidebar-inner" id="sidebarInner"></div>
-    <div class="sidebar-footer">
-      <button class="add-btn" onclick="openModal()">+ manage sources</button>
-    </div>
   </aside>
 
   <main>
@@ -174,46 +152,6 @@
       </div>
     </div>
   </main>
-</div>
-
-<!-- MANAGE SOURCES MODAL -->
-<div class="modal-bg" id="modalBg" onclick="closeModalBg(event)">
-  <div class="modal">
-    <h2>Manage Sources</h2>
-    <div class="field">
-      <label>Name</label>
-      <input type="text" id="f-name" placeholder="e.g. Carbon Brief">
-    </div>
-    <div class="field">
-      <label>Website URL</label>
-      <input type="text" id="f-url" placeholder="https://www.carbonbrief.org">
-    </div>
-    <div class="field">
-      <label>RSS Feed URL (optional — leave blank to use Claude fallback)</label>
-      <input type="text" id="f-rss" placeholder="https://www.carbonbrief.org/feed">
-    </div>
-    <div class="field">
-      <label>Update frequency / prominence</label>
-      <select id="f-freq">
-        <option value="sporadic">Sporadic — spotlight, no cap</option>
-        <option value="weekly" selected>Weekly — up to 5 articles</option>
-        <option value="daily">Daily — up to 4 articles</option>
-        <option value="hourly">Hourly — capped at 3</option>
-      </select>
-    </div>
-    <div class="field">
-      <label>Region</label>
-      <select id="f-region">
-        <option value="international">International</option>
-        <option value="iceland">Iceland</option>
-      </select>
-    </div>
-    <div class="modal-actions">
-      <button class="btn btn-amber" onclick="addSource()">Add Source</button>
-      <button class="btn btn-ghost" onclick="closeModal()">Close</button>
-    </div>
-    <div class="src-list-manage" id="srcListManage"></div>
-  </div>
 </div>
 
 <script>
@@ -273,16 +211,12 @@ let currentSourceFilter = null;
 function saveState() {
   const state = SOURCES.map(s => ({ id:s.id, enabled:s.enabled }));
   localStorage.setItem('amplified-sources', JSON.stringify(state));
-  const custom = SOURCES.filter(s => s.id.startsWith('u'));
-  localStorage.setItem('amplified-custom', JSON.stringify(custom));
 }
 
 function loadState() {
   try {
     const state = JSON.parse(localStorage.getItem('amplified-sources') || '[]');
     state.forEach(s => { const src = SOURCES.find(x => x.id === s.id); if(src) src.enabled = s.enabled; });
-    const custom = JSON.parse(localStorage.getItem('amplified-custom') || '[]');
-    custom.forEach(s => { if(!SOURCES.find(x => x.id === s.id)) SOURCES.push(s); });
   } catch(e) {}
 }
 
@@ -514,53 +448,6 @@ function setFilter(f, btn) {
   btn.classList.add('active');
   renderSidebar();
   if(Object.keys(feedData).length) renderFeed();
-}
-
-// ── MODAL ──
-function openModal() {
-  renderManageList();
-  document.getElementById('modalBg').classList.add('open');
-}
-function closeModal() { document.getElementById('modalBg').classList.remove('open'); }
-function closeModalBg(e) { if(e.target === document.getElementById('modalBg')) closeModal(); }
-
-function renderManageList() {
-  const el = document.getElementById('srcListManage');
-  let html = '<div style="font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin-bottom:10px">Current Sources</div>';
-  SOURCES.forEach(s => {
-    html += `<div class="src-row">
-      <div class="src-row-name">${s.region==='iceland'?'🇮🇸 ':'🌍 '}${s.name}</div>
-      <div class="src-row-freq">${s.freq}</div>
-      ${s.id.startsWith('u') ? `<button class="del-btn" onclick="deleteSrc('${s.id}')">✕</button>` : '<span style="width:22px"></span>'}
-    </div>`;
-  });
-  el.innerHTML = html;
-}
-
-function addSource() {
-  const name = document.getElementById('f-name').value.trim();
-  const url = document.getElementById('f-url').value.trim();
-  const rss = document.getElementById('f-rss').value.trim();
-  const freq = document.getElementById('f-freq').value;
-  const region = document.getElementById('f-region').value;
-  if(!name || !url) { alert('Name and URL are required.'); return; }
-  const id = 'u' + Date.now();
-  const maxMap = { sporadic:null, weekly:5, daily:4, hourly:3 };
-  SOURCES.push({ id, name, url, rss: rss||null, freq, region, enabled:true, maxItems: maxMap[freq] });
-  saveState();
-  renderSidebar();
-  renderManageList();
-  document.getElementById('f-name').value = '';
-  document.getElementById('f-url').value = '';
-  document.getElementById('f-rss').value = '';
-}
-
-function deleteSrc(id) {
-  if(!confirm('Remove this source?')) return;
-  SOURCES = SOURCES.filter(s => s.id !== id);
-  saveState();
-  renderSidebar();
-  renderManageList();
 }
 
 // ── INIT ──
